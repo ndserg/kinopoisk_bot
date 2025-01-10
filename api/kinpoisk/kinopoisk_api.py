@@ -14,12 +14,12 @@ class KinopoiskApi:
     """
 
     @classmethod
-    async def get_genres(cls) -> list[dict[str, str]]:
+    async def get_genres(cls) -> dict[str, str]:
         """Метод get_genres - для получения списка всех жанров
 
         Returns:
-            genres: Возвращает список объектов жанров
-                                    в формате [{"name": "string","slug": "string"}, ...]
+            genres: Возвращает объектов жанров
+                                    в формате {"slug": "string"}
         """
 
         url = "/v1/movie/possible-values-by-field"
@@ -27,60 +27,86 @@ class KinopoiskApi:
 
         res = await fetch(end_point, url, headers, query)
         genres: list[dict[str, str]] = res.json()
+        genres_dict: dict[str, str] = {item["slug"]: item["name"] for item in genres}
 
-        return genres
+        return genres_dict
 
     @classmethod
-    async def get_films_by_title(cls, query: dict[str, int | str | list[str]]) -> dict:
+    async def get_films_by_title(cls, query: dict[str, int | str | list[str]]) -> list:
         """Метод get_films_by_title - для получения списка фильмов по названию.
+        Так как API предоставляет только два параметра для поиска (название и количество результатов на странице),
+        фильтрация по жанрам и сортировка по рейтингу производится внутри данного метода.
 
         Args:
-            query: Параметры для поиска (название фильма, текущая страница, кол-во результатов на странице)
+            query: Параметры для поиска (название фильма, жанры, кол-во показываемых результатов)
 
         Returns:
-            films: Возвращает объект со следующей информацией
-                                - Объект со списком объектов фильмов.
-                                - Количество результатов поиска.
-                                - Количество выводимых результатов на странице.
-                                - Текущая страница поиска.
-                                - Количество страниц.
+            films: Возвращает список объектов с данными о фильмах.
+                    За исключением фильмов с отстутствующем описанием или названием.
         """
 
         url = "/v1.4/movie/search"
         query_str = {
-            "page": query["page"],
             "limit": query["limit"],
             "query": query["title"],
         }
 
         res = await fetch(end_point, url, headers, query_str)
-        films: dict = res.json()
+        data: dict = res.json()
 
-        films["docs"].sort(key=lambda film: film["rating"]["kp"], reverse=True)
+        def check_genres(film: dict) -> bool:
+            if film.get("genres") and len(film.get("genres")) > 0:
+                film_genres = [genre["name"] for genre in film.get("genres")]
+
+                for genre in query["genres.name"]:
+                    if genre in film_genres:
+                        return True
+
+                return False
+            else:
+                return False
+
+        def filter_films(film: dict) -> bool | dict:
+            if not film.get("description"):
+                return False
+
+            if not query.get("genres.name") is None:
+                return check_genres(film)
+
+            if film.get("name"):
+                return film
+            elif film.get("alternativeName"):
+                film["name"] = film.get("alternativeName")
+                return film
+            else:
+                return False
+
+        filtered_films = list(filter(filter_films, data["docs"]))
+
+        films = sorted(
+            filtered_films, key=lambda film: film["rating"]["kp"], reverse=True
+        )
 
         return films
 
     @classmethod
-    async def get_films_by_params(cls, query: dict[str, int | str | list[str]]) -> dict:
+    async def get_films_by_params(cls, query: dict[str, int | str | list[str]]) -> list:
         """Метод get_films_by_params - для получения списка фильмов по заданным параметрам.
 
         Args:
             query: Параметры для поиска (жанр, рейтинг, бюджет,
-                    текущая страница, кол-во результатов на странице, сортировка)
+                    кол-во показываемых результатов, сортировка)
 
         Returns:
-            films: Возвращает объект со следующей информацией
-                                - Объект со списком объектов фильмов
-                                - Количество результатов поиска.
-                                - Количество выводимых результатов на странице.
-                                - Текущая страница поиска.
-                                - Количество страниц.
+            films: Возвращает список объектов с данными о фильмах
         """
 
         url = "/v1.4/movie"
 
         res = await fetch(end_point, url, headers, query)
-        films: dict = res.json()
+        data: dict = res.json()
+
+        films = data["docs"]
 
         return films
 

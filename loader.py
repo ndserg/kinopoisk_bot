@@ -1,7 +1,8 @@
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from config_data import config
-from handlers.default_handlers.default_router import default_router
+from handlers.default_handlers.default_router import router as default_router
+from handlers.custom_handlers.search import router as search_router
 
 
 bot = Bot(token=config.BOT_TOKEN)
@@ -20,6 +21,6 @@ async def start_bot() -> None:
     """Функция запуска бота.
     Подключает роутеры, команды по умолчанию и запускает бота.
     """
-    dp.include_routers(default_router)
+    dp.include_routers(search_router, default_router)
     await set_default_commands()
     await dp.start_polling(bot)

@@ -25,12 +25,11 @@ type SortType = Literal["1", "-1"]
 
 
 def build_quiry(
-    page: int = 1,
-    limit: int = 10,
+    limit: int = 20,
     title: str = None,
     genres: list[str] = None,
-    rating: list[str] = None,
-    budget: list[str] = None,
+    rating: str = None,
+    budget: str = None,
     sort_field: list[str] = "rating.kp",
     sort_type: SortType = "1",
 ) -> dict[str, int | str | list[str]]:
@@ -38,8 +37,7 @@ def build_quiry(
         формирует и возвразает объект с существуюшими полями для поиска
 
     Args:
-        page: Текущая страница результатов поиска
-        limit: Количество результатов на странице
+        limit: Количество результатов
         title: Название фильма
         genres: Жанры фильмов
         rating: Рейтинг фильмов в формате ["2", "5", "7.2-9"] по рейтингу Кинопоиска
@@ -53,14 +51,13 @@ def build_quiry(
     """
 
     search_params = {
-        "page": page,
         "limit": limit,
         "title": title,
         "sortField": [sort_field],
         "sortType": [sort_type],
         "genres.name": genres,
-        "rating.kp": rating,
-        "budget.value": budget,
+        "rating.kp": rating.split(",") if rating else None,
+        "budget.value": budget.split("-") if budget else None,
     }
 
     query_params = {
