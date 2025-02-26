@@ -3,6 +3,7 @@ from typing import Literal
 
 _query_defaults = {
     "selectFields": [
+        "id",
         "name",
         "description",
         "rating",

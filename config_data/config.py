@@ -19,6 +19,10 @@ END_POINT = os.getenv("END_POINT")
 if END_POINT is None:
     exit("END_POINT API отсутствует в переменных окружения")
 
+DATABASE = os.getenv("DATABASE")
+if DATABASE is None:
+    exit("DATABASE отсутствует в переменных окружения")
+
 DEFAULT_COMMANDS = (
     ("start", "Запустить бота"),
     ("help", "Вывести справку"),

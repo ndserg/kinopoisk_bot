@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.types import Message
 from states.search import SearchState
 from .utils.genres_select import genres_select_step
@@ -12,8 +12,8 @@ router = Router(name=__name__)
 min_title_length = 4
 
 
-@router.message(F.text == search_types["title"]["text"])
-@router.message(Command("search"))
+@router.message(StateFilter(None), F.text == search_types["title"]["text"])
+@router.message(StateFilter(None), Command("search"))
 async def search(message: Message, state: FSMContext) -> None:
     """Хэндлер запуска поиска по названию фильма"""
 

@@ -16,9 +16,11 @@ async def genres_select_step(message: Message, state: FSMContext) -> None:
 
     await state.update_data(genres_all=genres)
 
-    await message.answer(
+    msg = await message.answer(
         "Можете дополнительно выбрать жанр фильма",
         reply_markup=get_genres_kb_markup(genres, selected=[]),
     )
+
+    await state.update_data(genres_select_msg_id=msg.message_id)
 
     await state.set_state(SearchState.genres_select)

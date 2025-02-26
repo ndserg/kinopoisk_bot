@@ -7,7 +7,7 @@ from config_data.config import DEFAULT_COMMANDS
 router = Router(name=__name__)
 
 
-@router.message(F.text == "help" or F.text == "помощь")
+@router.message(F.text.lower().in_(["help", "помощь"]))
 @router.message(Command("help"))
 async def bot_help(message: Message) -> None:
     """Хэндлер команды '/help'

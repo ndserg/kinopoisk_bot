@@ -25,8 +25,7 @@ class KinopoiskApi:
         url = "/v1/movie/possible-values-by-field"
         query = {"field": "genres.name"}
 
-        res = await fetch(end_point, url, headers, query)
-        genres: list[dict[str, str]] = res.json()
+        genres: list[dict[str, str]] = await fetch(end_point, url, headers, query)
         genres_dict: dict[str, str] = {item["slug"]: item["name"] for item in genres}
 
         return genres_dict
@@ -44,15 +43,13 @@ class KinopoiskApi:
             films: Возвращает список объектов с данными о фильмах.
                     За исключением фильмов с отстутствующем описанием или названием.
         """
-
         url = "/v1.4/movie/search"
         query_str = {
             "limit": query["limit"],
             "query": query["title"],
         }
 
-        res = await fetch(end_point, url, headers, query_str)
-        data: dict = res.json()
+        data: dict = await fetch(end_point, url, headers, query_str)
 
         def check_genres(film: dict) -> bool:
             if film.get("genres") and len(film.get("genres")) > 0:
@@ -103,8 +100,7 @@ class KinopoiskApi:
 
         url = "/v1.4/movie"
 
-        res = await fetch(end_point, url, headers, query)
-        data: dict = res.json()
+        data: dict = await fetch(end_point, url, headers, query)
 
         films = data["docs"]
 

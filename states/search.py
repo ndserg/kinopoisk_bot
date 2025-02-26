@@ -11,3 +11,6 @@ class SearchState(StatesGroup):
     genres_select = State()
     limit = State()
     sort = State()
+    search_result = State()
+    genres_select_msg_id = State()
+    cancel_cbs_ids = State()

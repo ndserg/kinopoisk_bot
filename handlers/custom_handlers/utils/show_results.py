@@ -3,9 +3,13 @@ from aiogram.types import Message
 from api.core import api
 from api.utils.query_builder import build_quiry
 from utils.misc.genres_to_local import get_local_genres_list
-from handlers.utils.pagination import pagination
+from handlers.utils.pagination import Pagination, DataStructure
 from utils.misc.movie_card import get_movie_card_markup
 from utils.misc.types import search_types
+from database.CRUD import add_history
+
+
+pagination = Pagination()
 
 
 async def get_search_results(message: Message, state: FSMContext) -> None:
@@ -29,22 +33,20 @@ async def get_search_results(message: Message, state: FSMContext) -> None:
     )
 
     search_by_text: dict[str, str] = {
-        "title": f"Название фильма - {data.get('title')}",
-        "rating": f"Рейтинг фильма - {data.get('rating')}",
-        "low_budget": f"Низкобюджетные фильмы в диапазоне - {data.get('low_budget')}",
-        "high_budget": f"Высокобюджетные фильмы в диапазоне - {data.get('high_budget')}",
+        "title": f"📺 Название фильма - <b>{data.get('title')}</b>",
+        "rating": f"⭐️ Рейтинг фильма - <b>{data.get('rating')}</b>",
+        "low_budget": f"📉 Низкобюджетные фильмы в диапазоне - <b>{data.get('low_budget')}</b>",
+        "high_budget": f"📈 Высокобюджетные фильмы в диапазоне - <b>{data.get('high_budget')}</b>",
     }
 
     text: str = (
-        f"Ищем фильмы по следующим параметрам: \n"
-        f"{search_by_text.get(current_search_by)}\n"
-        f"Жанр фильма - {genres_str}.\n"
-        f"Покажем результатов - {data.get('limit')}\n"
+        f"🔍 <b><u>Поиск фильмов по следующим параметрам:</u></b> \n\n"
+        f"{search_by_text.get(current_search_by)}.\n\n"
+        f"🎥 Жанр фильма - <b>{genres_str}</b>.\n\n"
+        f"🖨 Вывести не более - <b>{data.get('limit')}</b> результатов."
     )
 
-    await message.answer(text)
-
-    await state.clear()
+    await message.answer(text, parse_mode="html")
 
     is_budget_search: bool = (
         current_search_by == search_types["low_budget"]["name"]
@@ -74,12 +76,23 @@ async def get_search_results(message: Message, state: FSMContext) -> None:
         await message.answer(
             "Фильмы по заданным параметрам не найдены! Попробуйте заново."
         )
-    elif isinstance(movies, list) and len(movies) > 1:
-        movies_list: list[str] = [get_movie_card_markup(movie) for movie in movies]
+    else:
+        user_id = message.from_user.id
+
+        await add_history(user_id=user_id, history_params=text, films=movies)
+
+        movies_list: list[DataStructure] = []
+
+        for movie in movies:
+            movie_str = get_movie_card_markup(movie)
+
+            new_film: DataStructure = {
+                "data": movie_str,
+                "kb_before": None,
+                "kb_after": None,
+            }
+
+            movies_list.append(new_film)
 
         await pagination.set_data(movies_list)
-
         await pagination.send_character_page(message)
-    else:
-        movie = get_movie_card_markup(movies[0])
-        await message.answer(movie, parse_mode="html")

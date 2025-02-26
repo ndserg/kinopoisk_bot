@@ -1,5 +1,7 @@
 aiogram==3.17.0
 aiogram_calendar==0.6.0
 python-dotenv==1.0.1
-requests==2.32.3
 python-telegram-bot-pagination==0.0.3
+SQLAlchemy==2.0.37
+aiosqlite==0.21.0
+aiohttp==3.10.11

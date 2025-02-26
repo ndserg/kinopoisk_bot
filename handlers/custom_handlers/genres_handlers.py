@@ -31,8 +31,14 @@ async def is_genre_selected(message: Message) -> None:
 @router.callback_query(SearchState.genres_select, F.data == "skip")
 async def genres_skip_callback(call: CallbackQuery, state: FSMContext) -> None:
     """Хэндлер для пропуска шага выбора жанра."""
-
     await state.update_data(genres_select=[])
+
+    data = await state.get_data()
+    await call.bot.delete_message(
+        message_id=data["genres_select_msg_id"], chat_id=call.message.chat.id
+    )
+
+    await state.update_data(genres_select_msg_id=None)
 
     await call.message.answer(
         "<b>Вы решили не указывать жанр</b>", parse_mode=ParseMode.HTML
@@ -50,8 +56,10 @@ async def genres_save_callback(call: CallbackQuery, state: FSMContext) -> None:
     selected_genres: list = data["genres_select"][:]
 
     await call.bot.delete_message(
-        chat_id=call.message.chat.id, message_id=call.message.message_id
+        message_id=data["genres_select_msg_id"], chat_id=call.message.chat.id
     )
+
+    await state.update_data(genres_select_msg_id=None)
 
     if len(selected_genres) > 0:
         local_genres: list[str] = get_local_genres_list(

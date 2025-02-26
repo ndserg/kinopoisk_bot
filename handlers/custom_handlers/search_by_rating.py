@@ -1,6 +1,6 @@
 import re
 from aiogram import Router, F
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -12,8 +12,8 @@ from utils.misc.types import search_types
 router = Router(name=__name__)
 
 
-@router.message(F.text == search_types["rating"]["text"])
-@router.message(Command("rating"))
+@router.message(StateFilter(None), F.text == search_types["rating"]["text"])
+@router.message(StateFilter(None), Command("rating"))
 async def search(message: Message, state: FSMContext) -> None:
     """Хэндлер запуска поиска по рейтингу"""
 

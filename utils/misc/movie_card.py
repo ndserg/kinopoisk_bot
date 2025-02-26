@@ -37,8 +37,8 @@ def get_movie_card_markup(data: dict) -> str:
         f"📆 Год производства - <b>{movie.get('year', "Не указан")}</b>\n\n"
         f"🎥 Жанр - <b>{movie_genres}</b>\n\n"
         f"🚹 Возрастной рейтинг - <b>{movie.get('ageRating', 'Отсутствует')}</b>\n\n"
-        f"💰 Бюджет фильма - <b>{movie_budget}</b> "
-        f"Валюта - <b>{movie_currency}</b>"
+        f"💰 Бюджет фильма - <b>{movie_budget}</b>; "
+        f"(Валюта - <b>{movie_currency}</b>)"
     )
 
     return movie_card
