@@ -23,10 +23,11 @@ async def fetch(
     Raises:
         RequestError: Перехватывает ошибки соединения и неудачных ответов сервера
     """
+    timeout = aiohttp.ClientTimeout(total=5)
 
     try:
         async with aiohttp.ClientSession(
-            headers=headers, raise_for_status=True
+            headers=headers, timeout=timeout, raise_for_status=True
         ) as session:
             async with session.get(url=f"{end_point}{url}", params=query_str) as resp:
                 response = await resp.json()

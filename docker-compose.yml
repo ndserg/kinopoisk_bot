@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    restart: always
+    # tty: true # раскомментировать если нужно получать выводы print в консоле сервера
+    volumes:
+      - ./.env:/app/.env # здесь указывается - относительный путь к фалу в папке хоста: путь к фалу в проекте
+      - mysqlite_data:/app/data_store/
+
+volumes:
+  mysqlite_data:

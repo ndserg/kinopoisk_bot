@@ -6,7 +6,7 @@ from keyboards.inline.cancel import get_cancel_kb_markup
 from states.search import SearchState
 from utils.misc.types import search_types
 from .utils.show_results import get_search_results, pagination
-
+from ..utils.set_cancel_cb import set_cancel_cb
 
 router = Router(name=__name__)
 
@@ -43,9 +43,11 @@ async def characters_page_callback(call: CallbackQuery) -> None:
 @router.message(
     SearchState.search_result, ~F.text.startswith("/") & ~F.text.in_(search_commands)
 )
-async def unknown_text(message: Message) -> None:
+async def unknown_text(message: Message, state: FSMContext) -> None:
     """Хэндлер не известных запросов/текста."""
-    await message.answer(
+    msg = await message.answer(
         "Не известная команда.\nЕсли хотите прервать вывод информации - нажмите 'Отмена'",
         reply_markup=get_cancel_kb_markup(),
     )
+
+    await set_cancel_cb(msg, state)

@@ -4,8 +4,11 @@ from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
+from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback, get_user_locale
 from aiogram_calendar.schemas import SimpleCalAct
+
+from handlers.utils.delete_cancel_msgs import delete_cancel_msgs
+from handlers.utils.set_cancel_cb import set_cancel_cb
 from keyboards.inline.cancel import get_cancel_kb_markup
 from keyboards.inline.watch_list import get_watchlist_kb_markup
 from states.history import HistoryState
@@ -22,8 +25,43 @@ pagination = Pagination()
 search_commands = {search_types[item]["text"] for item in search_types}
 date_template_str = "%d.%m.%Y"
 
-calendar = SimpleCalendar(locale="ru-RU", show_alerts=True)
-calendar.set_dates_range(datetime(2022, 1, 1), datetime(2026, 12, 31))
+
+class CurrentCalendar:
+    """
+    Класс календаря текущей сессии поиска
+
+    Attributes:
+        __calendar: инстанс класса SimpleCalendar
+
+    """
+
+    __calendar: SimpleCalendar = None
+
+    @classmethod
+    async def set_calendar(cls, user) -> None:
+        """
+        Метод установки календаря с локалью пользователя
+
+        Args:
+            user: Данные о пользователе Telegram
+        """
+        user_lang = await get_user_locale(user)
+
+        cls.__calendar = SimpleCalendar(locale=user_lang, show_alerts=True)
+        cls.__calendar.set_dates_range(datetime(2022, 1, 1), datetime(2026, 12, 31))
+
+    @classmethod
+    async def get_calendar(cls) -> SimpleCalendar:
+        """
+        Метод получения текущего календаря с нужными настройками (инстанс класса SimpleCalendar)
+
+        Returns:
+            Возвращает инстанс класса SimpleCalendar
+        """
+        return cls.__calendar
+
+
+current_calendar = CurrentCalendar()
 
 today: datetime = datetime.now()
 
@@ -79,6 +117,8 @@ async def date_picker(
     data = await state.get_data()
     result: str | None = None
 
+    calendar: SimpleCalendar = await current_calendar.get_calendar()
+
     selected, selected_date = await calendar.process_selection(
         callback_query, callback_data
     )
@@ -104,6 +144,9 @@ async def get_history_dates(message: Message, state: FSMContext) -> None:
 
     await state.set_state(HistoryState.history_start)
 
+    await current_calendar.set_calendar(message.from_user)
+    calendar: SimpleCalendar = await current_calendar.get_calendar()
+
     msg = await message.answer(
         "Выберите за какой период показать историю запросов",
         reply_markup=await calendar.start_calendar(year=today.year, month=today.month),
@@ -121,6 +164,8 @@ async def get_start_date(
     """Хэндлер получения начальной даты поиска"""
     data = await state.get_data()
     start_date: str = await date_picker(callback_query, callback_data, state)
+
+    calendar: SimpleCalendar = await current_calendar.get_calendar()
 
     if not start_date is None:
         await state.update_data(history_start=start_date)
@@ -232,16 +277,12 @@ async def not_date_selected(message: Message) -> None:
 )
 async def unknown_text(message: Message, state: FSMContext) -> None:
     """Хэндлер не известных запросов/текста."""
-    data = await state.get_data()
-    cb_ids = data["cancel_cbs_ids"] if data.get("cancel_cbs_ids") else []
-
     msg = await message.answer(
         "Не известная команда.\nЕсли хотите прервать вывод истории - нажмите 'Отмена'",
         reply_markup=get_cancel_kb_markup(),
     )
 
-    cb_ids.append(msg.message_id)
-    await state.update_data(cancel_cbs_ids=cb_ids)
+    await set_cancel_cb(msg, state)
 
 
 @router.message(
@@ -251,41 +292,31 @@ async def unknowns_commands(message: Message, state: FSMContext) -> None:
     """Хэндлер для перехвата вызова комманд или коллбэк данных (комманд для поиска) во время поиска.
     Дает возможность отменить текущий поиск и сбросить текущее состояние.
     """
-    data = await state.get_data()
-    cb_ids = data["cancel_cbs_ids"] if data.get("cancel_cbs_ids") else []
-
     msg = await message.answer(
         'Ответы не должны начинаться со знака "/" команды бота или содержать текст из комманд меню поиска. \n'
         'Если хотите прервать вывод истории - нажмите "Отмена" или просто продолжите текущий поиск.',
         reply_markup=get_cancel_kb_markup(),
     )
 
-    cb_ids.append(msg.message_id)
-    await state.update_data(cancel_cbs_ids=cb_ids)
+    await set_cancel_cb(msg, state)
 
 
 @router.callback_query(StateFilter(HistoryState), F.data == "cancel")
 async def cancel_callback(call: CallbackQuery, state: FSMContext) -> None:
     """Хэндлер отменяет текущий поиск, сбросывает текущее состояние и удаляет не нужные сообщения (календарь, истрию, фильмы)"""
     data = await state.get_data()
-    pagination_data: CurrentData = await pagination.get_current_data()
 
     if not data["calendar_id"] is None:
         await call.bot.delete_message(
             message_id=data["calendar_id"], chat_id=call.message.chat.id
         )
 
-    if not pagination_data.get("pagination_msg_id") is None:
-        await call.bot.delete_message(
-            message_id=pagination_data["pagination_msg_id"],
-            chat_id=call.message.chat.id,
-        )
+    await pagination.destroy_pagination(call, call.message.chat.id)
 
     if not data.get("cancel_cbs_ids") is None:
-        for cb_id in data["cancel_cbs_ids"]:
-            await call.bot.delete_message(
-                chat_id=call.message.chat.id, message_id=cb_id
-            )
+        await delete_cancel_msgs(
+            call, msg_ids=data["cancel_cbs_ids"], chat_id=call.message.chat.id
+        )
 
     await state.clear()
 
@@ -349,7 +380,7 @@ async def show_films_in_history(call: CallbackQuery, state: FSMContext) -> None:
 )
 async def watchlist_toggle_callback(call: CallbackQuery) -> None:
     """Коллбэк функция - реагирует на клик по кнопкам пагинации
-        и вызывает добавление/удаление фильма в списке просмотренных
+    и вызывает добавление/удаление фильма в списке просмотренных
     """
     film_id = call.data.split("#")[1]
     is_watched = True if call.data.split("#")[2] == "True" else False

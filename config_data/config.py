@@ -1,27 +1,35 @@
 import os
+from enum import Enum
 from dotenv import load_dotenv, find_dotenv
 
+
+class ExpectedEnvs(Enum):
+    bot_token = "BOT_TOKEN"
+    api_key = "API_KEY"
+    end_point = "END_POINT"
+    database = "DATABASE"
+
+
+error_messages = {
+    ExpectedEnvs.bot_token: "BOT_TOKEN отсутствует в переменных окружения",
+    ExpectedEnvs.api_key: "API_KEY отсутствует в переменных окружения",
+    ExpectedEnvs.end_point: "END_POINT API отсутствует в переменных окружения",
+    ExpectedEnvs.database: "DATABASE отсутствует в переменных окружения",
+}
 
 if not find_dotenv():
     exit("Переменные окружения не загружены т.к отсутствует файл .env")
 else:
     load_dotenv()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if BOT_TOKEN is None:
-    exit("BOT_TOKEN отсутствует в переменных окружения")
+for env in ExpectedEnvs:
+    if os.getenv(env.value) is None:
+        exit(error_messages[env])
 
-API_KEY = os.getenv("API_KEY")
-if API_KEY is None:
-    exit("API_KEY отсутствует в переменных окружения")
-
-END_POINT = os.getenv("END_POINT")
-if END_POINT is None:
-    exit("END_POINT API отсутствует в переменных окружения")
-
-DATABASE = os.getenv("DATABASE")
-if DATABASE is None:
-    exit("DATABASE отсутствует в переменных окружения")
+BOT_TOKEN = os.getenv(ExpectedEnvs.bot_token.value)
+API_KEY = os.getenv(ExpectedEnvs.api_key.value)
+END_POINT = os.getenv(ExpectedEnvs.end_point.value)
+DATABASE = os.getenv(ExpectedEnvs.database.value)
 
 DEFAULT_COMMANDS = (
     ("start", "Запустить бота"),

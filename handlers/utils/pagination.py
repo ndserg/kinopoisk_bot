@@ -1,7 +1,7 @@
 from typing import TypedDict, Optional
 from aiogram import Router
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import Message, InlineKeyboardMarkup
+from aiogram.types import Message, InlineKeyboardMarkup, CallbackQuery
 from telegram_bot_pagination import InlineKeyboardPaginator
 
 
@@ -59,7 +59,9 @@ class Pagination:
 
     @classmethod
     async def update_data(
-        cls, new_data: DataStructure, additional_data: Optional[list | dict | set] = None
+        cls,
+        new_data: DataStructure,
+        additional_data: Optional[list | dict | set] = None,
     ) -> bool:
         """
             Метод для обновления данных пагинации
@@ -170,3 +172,17 @@ class Pagination:
             )
 
         cls.__msg_id = msg.message_id
+
+    @classmethod
+    async def destroy_pagination(
+        cls, caller: CallbackQuery, chat_id: int | str
+    ) -> None:
+        """Метод удаления пагинации
+
+        Args:
+            caller: Telegram CallbackQuery
+            chat_id: Telegram Bot chat id
+        """
+        if not cls.__msg_id is None:
+            await caller.bot.delete_message(message_id=cls.__msg_id, chat_id=chat_id)
+            await cls.clear_data()

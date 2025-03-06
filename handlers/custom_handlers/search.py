@@ -12,12 +12,13 @@ from .search_by_high_budget import router as high_budget_router
 from .history import router as history_router
 from .genres_handlers import router as genres_router
 from .limit_handlers import router as limit_router
-from handlers.utils.pagination import router as pagination_router, CurrentData
+from handlers.utils.pagination import router as pagination_router
 from api.utils.error_handlers import RequestError
 from keyboards.inline.cancel import get_cancel_kb_markup
 from utils.misc.types import search_types
 from .utils.show_results import pagination
-
+from ..utils.delete_cancel_msgs import delete_cancel_msgs
+from ..utils.set_cancel_cb import set_cancel_cb
 
 router = Router(name="search")
 router.include_routers(
@@ -42,23 +43,18 @@ async def unknowns_commands(message: Message, state: FSMContext) -> None:
     """Хэндлер для перехвата вызова комманд или коллбэк данных (комманд для поиска) во время поиска.
     Дает возможность отменить текущий поиск и сбросить текущее состояние.
     """
-    data = await state.get_data()
-    cb_ids = data["cancel_cbs_ids"] if data.get("cancel_cbs_ids") else []
-
     msg = await message.answer(
         'Ответы не должны начинаться со знака "/" команды бота или содержать текст из комманд меню поиска. \n'
         'Если хотите выйти из текущего поиска - нажмите "Отмена" или просто продолжите текущий поиск.',
         reply_markup=get_cancel_kb_markup(),
     )
 
-    cb_ids.append(msg.message_id)
-    await state.update_data(cancel_cbs_ids=cb_ids)
+    await set_cancel_cb(msg, state)
 
 
 @router.callback_query(StateFilter(SearchState), F.data == "cancel")
 async def cancel_callback(call: CallbackQuery, state: FSMContext) -> None:
     """Хэндлер отменяет текущий поиск и сбросывает текущее состояние"""
-    pagination_data: CurrentData = await pagination.get_current_data()
     data = await state.get_data()
 
     if not data.get("genres_select_msg_id") is None:
@@ -66,17 +62,12 @@ async def cancel_callback(call: CallbackQuery, state: FSMContext) -> None:
             message_id=data["genres_select_msg_id"], chat_id=call.message.chat.id
         )
 
-    if not pagination_data.get("pagination_msg_id") is None:
-        await call.bot.delete_message(
-            message_id=pagination_data["pagination_msg_id"],
-            chat_id=call.message.chat.id,
-        )
+    await pagination.destroy_pagination(call, call.message.chat.id)
 
     if not data.get("cancel_cbs_ids") is None:
-        for cb_id in data["cancel_cbs_ids"]:
-            await call.bot.delete_message(
-                chat_id=call.message.chat.id, message_id=cb_id
-            )
+        await delete_cancel_msgs(
+            call, msg_ids=data["cancel_cbs_ids"], chat_id=call.message.chat.id
+        )
 
     await state.clear()
 
