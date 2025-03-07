@@ -127,6 +127,9 @@ class Pagination:
                             при отрисовке следующих страниц - сообщение редактируется по id первого сообщения
 
         """
+        if page == cls.__page:
+            return
+
         if not page is None:
             cls.__page = page
 

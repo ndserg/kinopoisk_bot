@@ -1,9 +1,9 @@
 from api.utils.request_handler import fetch
-from config_data import config
+from config_data.config import ExpectedEnvs, MAIN_ENV
 
 
-end_point = config.END_POINT
-api_key = config.API_KEY
+end_point = MAIN_ENV.get(ExpectedEnvs.end_point.value)
+api_key = MAIN_ENV.get(ExpectedEnvs.api_key.value)
 
 headers = {"accept": "application/json", "X-API-KEY": api_key}
 

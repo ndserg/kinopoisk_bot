@@ -1,11 +1,13 @@
 services:
   app:
     build: .
+    container_name: kpbot
     restart: always
-    # tty: true # раскомментировать если нужно получать выводы print в консоле сервера
+    tty: true # раскомментировать если нужно получать выводы print в консоле сервера
     volumes:
       - ./.env:/app/.env # здесь указывается - относительный путь к фалу в папке хоста: путь к фалу в проекте
-      - mysqlite_data:/app/data_store/
+      - mysqlite_data:/app/data_store/ # Создание тома для хранения базы данных
+#    command: ["--drop-db"] # Команда очистки базы при старте бота. Раскомментировать и запусить docker compose up
 
 volumes:
   mysqlite_data:

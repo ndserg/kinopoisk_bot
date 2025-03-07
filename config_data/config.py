@@ -10,6 +10,14 @@ class ExpectedEnvs(Enum):
     database = "DATABASE"
 
 
+class OptionalEnvs(Enum):
+    web_server_host = "WEB_SERVER_HOST"
+    web_server_port = "WEB_SERVER_PORT"
+    webhook_path = "WEBHOOK_PATH"
+    webhook_secret = "WEBHOOK_SECRET"
+    base_webhook_url = "BASE_WEBHOOK_URL"
+
+
 error_messages = {
     ExpectedEnvs.bot_token: "BOT_TOKEN отсутствует в переменных окружения",
     ExpectedEnvs.api_key: "API_KEY отсутствует в переменных окружения",
@@ -22,14 +30,24 @@ if not find_dotenv():
 else:
     load_dotenv()
 
+MAIN_ENV: dict[str, any] = {}
+OPT_ENV: dict[str, any] | None = {}
+
+IS_WEBHOOK: bool = False
+
 for env in ExpectedEnvs:
-    if os.getenv(env.value) is None:
+    if not os.getenv(env.value) is None:
+        MAIN_ENV[env.value] = os.getenv(env.value)
+    else:
         exit(error_messages[env])
 
-BOT_TOKEN = os.getenv(ExpectedEnvs.bot_token.value)
-API_KEY = os.getenv(ExpectedEnvs.api_key.value)
-END_POINT = os.getenv(ExpectedEnvs.end_point.value)
-DATABASE = os.getenv(ExpectedEnvs.database.value)
+for env in OptionalEnvs:
+    if not os.getenv(env.value) is None:
+        IS_WEBHOOK = True
+        OPT_ENV[env.value] = os.getenv(env.value)
+    else:
+        IS_WEBHOOK = False
+        break
 
 DEFAULT_COMMANDS = (
     ("start", "Запустить бота"),

@@ -4,6 +4,7 @@
 .gitattributes
 
 # Docker
+docker-compose.*
 docker-compose.yml
 Dockerfile
 .docker
@@ -22,5 +23,4 @@ __pycache__
 .vscode/
 
 #database
-*.db
-data_store/*.db
+data_store/
