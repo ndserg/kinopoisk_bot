@@ -19,7 +19,7 @@ def get_movie_card_markup(data: dict) -> str:
     )
 
     if movie.get("poster") is None or movie["poster"].get("url") is None:
-        movie["poster"]["url"] = "https://dendev.ru/img/no-image-for-tg.png"
+        movie["poster"] = {"url": "https://dendev.ru/img/no-image-for-tg.png"}
 
     if movie.get("budget") is None or movie["budget"].get("value") is None:
         movie_budget = "Не указан"
