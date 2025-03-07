@@ -1,7 +1,7 @@
 search_types = {
-    "title": {"name": "title", "text": "Поиск по названию 🔍"},
-    "rating": {"name": "rating", "text": "Поиск по рейтингу ⭐️"},
-    "low_budget": {"name": "low_budget", "text": "Поиск с низким бюджетом 📉"},
-    "high_budget": {"name": "high_budget", "text": "Поиск с высоким бюджетом 📈"},
+    "title": {"name": "title", "text": "По названию 🔍"},
+    "rating": {"name": "rating", "text": "По рейтингу ⭐️"},
+    "low_budget": {"name": "low_budget", "text": "С низким бюджетом 📉"},
+    "high_budget": {"name": "high_budget", "text": "С высоким бюджетом 📈"},
     "history": {"name": "history", "text": "История запросов и поиска 🗓"},
 }

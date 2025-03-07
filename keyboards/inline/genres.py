@@ -25,10 +25,8 @@ def get_genres_kb_markup(
 
     genres_kb_builder.adjust(row_width)
 
-    genres_kb_skip_btn = InlineKeyboardButton(text="Пропустить ⏭️", callback_data="skip")
-    genres_kb_save_btn = InlineKeyboardButton(
-        text="Сохранить и продолжить 💾", callback_data="save"
-    )
+    genres_kb_skip_btn = InlineKeyboardButton(text="Пропуск ⏭️", callback_data="skip")
+    genres_kb_save_btn = InlineKeyboardButton(text="Сохранить 💾", callback_data="save")
 
     genres_kb_actions_btn_row = [[genres_kb_skip_btn, genres_kb_save_btn]]
 
